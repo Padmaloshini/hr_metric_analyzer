@@ -350,11 +350,23 @@
       }, { joiners:0, attr:0, infant:0, avgAcc:0 });
 
       const days      = summary.length;
-      const openingHC = summary[0]["Opening HC"];               // first day opening
+      const openingHC = summary[0]["Opening HC"];                // first day opening
       const closingHC = summary[summary.length-1]["Closing HC"]; // last day closing
       const avgHC     = totals.avgAcc / (2 * days);
-      const attrPct   = avgHC ? (totals.attr / avgHC * 100) : 0;
-      const infantPct = totals.joiners ? (totals.infant / totals.joiners * 100) : 0;
+
+      // Attrition % for period, capped at 100
+      let attrPct = 0;
+      if (avgHC > 0) {
+        attrPct = (totals.attr / avgHC) * 100;
+        if (attrPct > 100) attrPct = 100;
+      }
+
+      // Infant % for period, capped at 100
+      let infantPct = 0;
+      if (totals.joiners > 0) {
+        infantPct = (totals.infant / totals.joiners) * 100;
+        if (infantPct > 100) infantPct = 100;
+      }
 
       const kpis = [
         { label: "Total Days", value: days },
@@ -429,14 +441,14 @@
     }
 
     function processFile() {
-      const fileInput = document.getElementById('fileInput');
+      const fileInput   = document.getElementById('fileInput');
       const fromDateStr = document.getElementById('fromDate').value;
       const toDateStr   = document.getElementById('toDate').value;
 
-      document.getElementById('tableContainer').innerHTML = "Processing...";
+      document.getElementById('tableContainer').innerHTML     = "Processing...";
       document.getElementById('typeTableContainer').innerHTML = "Processing...";
-      document.getElementById('downloadLink').style.display = "none";
-      document.getElementById('headcountSummary').value = 0;
+      document.getElementById('downloadLink').style.display   = "none";
+      document.getElementById('headcountSummary').value       = 0;
       log("");
 
       if (!fileInput.files.length) {
@@ -458,22 +470,22 @@
 
       const fromDate = dateOnly(new Date(fromDateStr));
       const toDate   = dateOnly(new Date(toDateStr));
-      const file = fileInput.files[0];
+      const file     = fileInput.files[0];
 
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = function (e) {
         try {
-          const data = new Uint8Array(e.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const data      = new Uint8Array(e.target.result);
+          const workbook  = XLSX.read(data, { type: 'array' });
           const sheetName = workbook.SheetNames[0];
-          const sheet = workbook.Sheets[sheetName];
-          const rows = XLSX.utils.sheet_to_json(sheet, { raw: true });
+          const sheet     = workbook.Sheets[sheetName];
+          const rows      = XLSX.utils.sheet_to_json(sheet, { raw: true });
 
           rows.forEach(r => {
-            r.DOJ = parseDateCell(r["Date of Joining"]);
-            r.Exit = parseDateCell(r["Exit Date"]);
+            r.DOJ        = parseDateCell(r["Date of Joining"]);
+            r.Exit       = parseDateCell(r["Exit Date"]);
             r.GenderNorm = (r["Gender"] || "").toString().toLowerCase();
-            r.EmpType = (r["Employment Type"] || "").toString().trim();
+            r.EmpType    = (r["Employment Type"] || "").toString().trim();
           });
 
           const summary = [];
@@ -489,7 +501,7 @@
           }).length;
 
           for (let d = fromDate; d <= toDate; d = addDays(d, 1)) {
-            const day = dateOnly(d);
+            const day     = dateOnly(d);
             const dateStr = formatLocalDate(day);
 
             const joiners = rows.filter(r => r.DOJ && r.DOJ.getTime() === day.getTime());
@@ -501,14 +513,22 @@
             const leaveM  = leavers.filter(r => r.GenderNorm === "male");
 
             const openingHC = prevClosingHC;
-            const closingHC = openingHC + joiners.length - leavers.length;
 
-            const closingF = joinF.length - leaveF.length; // only deltas (optional)
-            const closingM = joinM.length - leaveM.length;
+            // employees active at end of day (for true closing HC & gender split)
+            const closingEmployees = rows.filter(r => {
+              if (!r.DOJ) return false;
+              if (r.DOJ > day) return false;
+              if (!r.Exit) return true;
+              return r.Exit > day;
+            });
+
+            const closingHC = closingEmployees.length;
+            const closingF  = closingEmployees.filter(r => r.GenderNorm === "female").length;
+            const closingM  = closingEmployees.filter(r => r.GenderNorm === "male").length;
 
             const infant = leavers.filter(r => {
               if (!r.DOJ || !r.Exit) return false;
-              const diffDays = (r.Exit - r.DOJ) / (1000*60*60*24);
+              const diffDays = (r.Exit - r.DOJ) / (1000 * 60 * 60 * 24);
               return diffDays <= 30;
             });
             const infantHC = infant.length;
@@ -517,8 +537,12 @@
             const attrHCF = leaveF.length;
             const attrHCM = leaveM.length;
 
-            const avgHC  = (openingHC + closingHC) / 2 || 0;
-            const attrPct = avgHC ? (attrHC / avgHC * 100) : 0;
+            const avgHC = (openingHC + closingHC) / 2;
+            let attrPct = 0;
+            if (avgHC > 0) {
+              attrPct = (attrHC / avgHC) * 100;
+              if (attrPct > 100) attrPct = 100;   // cap daily %
+            }
 
             summary.push({
               "Date": dateStr,
@@ -537,13 +561,6 @@
             });
 
             prevClosingHC = closingHC;
-
-            const closingEmployees = rows.filter(r => {
-              if (!r.DOJ) return false;
-              if (r.DOJ > day) return false;
-              if (!r.Exit) return true;
-              return r.Exit > day;
-            });
 
             const typeCounts = {};
             closingEmployees.forEach(r => {
@@ -564,7 +581,7 @@
             });
           });
 
-          globalSummary = summary;
+          globalSummary     = summary;
           globalTypeSummary = typeRows;
 
           const headHeaders = [
@@ -585,23 +602,23 @@
             document.getElementById('headcountSummary').value = lastDay["Closing HC"];
           }
 
-          const wb = XLSX.utils.book_new();
-          const ws1 = XLSX.utils.json_to_sheet(summary);
+          const wb   = XLSX.utils.book_new();
+          const ws1  = XLSX.utils.json_to_sheet(summary);
           XLSX.utils.book_append_sheet(wb, ws1, "Daily Summary");
-          const ws2 = XLSX.utils.json_to_sheet(typeRows);
+          const ws2  = XLSX.utils.json_to_sheet(typeRows);
           XLSX.utils.book_append_sheet(wb, ws2, "Employee Type");
           const wbout = XLSX.write(wb, { bookType:'xlsx', type:'array' });
-          const blob = new Blob([wbout], { type:'application/octet-stream' });
-          const url = URL.createObjectURL(blob);
-          const link = document.getElementById('downloadLink');
-          link.href = url;
-          link.download = 'daily_headcount_summary_from_master.xlsx';
+          const blob  = new Blob([wbout], { type:'application/octet-stream' });
+          const url   = URL.createObjectURL(blob);
+          const link  = document.getElementById('downloadLink');
+          link.href        = url;
+          link.download    = 'daily_headcount_summary_from_master.xlsx';
           link.style.display = "inline";
 
           log("Summary days: " + summary.length + " | Type rows: " + typeRows.length);
         } catch (err) {
           log("Error: " + err.message);
-          document.getElementById('tableContainer').textContent = "Error processing file.";
+          document.getElementById('tableContainer').textContent     = "Error processing file.";
           document.getElementById('typeTableContainer').textContent = "Error processing file.";
           document.getElementById('headcountSummary').value = 0;
         }
