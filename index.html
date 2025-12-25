@@ -2,13 +2,18 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Automated HR Metric Analyzer</title>
+  <title>Automated HR Metric Analyzer – Secured</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 24px;
       background: radial-gradient(circle at top left, #e0f2ff 0, #f3f6ff 35%, #edf2f7 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
     }
     .card {
       background: rgba(255, 255, 255, 0.92);
@@ -20,21 +25,33 @@
       backdrop-filter: blur(12px);
       border: 1px solid rgba(148, 163, 184, 0.35);
     }
+    #loginView.card {
+      max-width: 700px;
+      margin-top: 40px;
+    }
+    #requestView.card {
+      max-width: 800px;
+      margin-top: 40px;
+      display: none;
+    }
     h2 {
       margin-top: 0;
       color: #0f172a;
       letter-spacing: 0.02em;
+      text-align: center;
     }
     h3 {
       margin-top: 0;
       color: #1e293b;
+      text-align: center;
     }
-    .form-row {
+    .form-row, .login-row {
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
       align-items: center;
       margin-bottom: 12px;
+      justify-content: center;
     }
     .form-group {
       display: flex;
@@ -48,22 +65,26 @@
     }
     input[type="file"],
     input[type="date"],
-    input[type="text"] {
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    textarea {
       padding: 7px 10px;
       font-size: 13px;
       border-radius: 6px;
       border: 1px solid #cbd5e1;
       background: #f8fafc;
       color: #0f172a;
-      min-width: 180px;
+      min-width: 220px;
     }
     input[type="file"] { background: #ffffff; }
-    input:focus {
+    textarea { min-height: 70px; resize: vertical; }
+    input:focus, textarea:focus {
       outline: none;
       border-color: #2563eb;
       box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.15);
     }
-    button {
+    button, .btn-link {
       background: linear-gradient(135deg, #2563eb, #1d4ed8);
       color: #fff;
       border: none;
@@ -74,9 +95,11 @@
       font-weight: 600;
       margin-right: 8px;
       box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
-      transition: transform 0.08s ease, box-shadow 0.08s ease, opacity 0.08s.ease;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, opacity 0.08s ease;
+      text-decoration: none;
+      display: inline-block;
     }
-    button:hover {
+    button:hover, .btn-link:hover {
       transform: translateY(-1px);
       box-shadow: 0 8px 20px rgba(37, 99, 235, 0.45);
       opacity: 0.95;
@@ -92,6 +115,7 @@
       font-weight: 600;
     }
     #downloadLink:hover { text-decoration: underline; }
+
     table {
       border-collapse: collapse;
       width: 100%;
@@ -165,68 +189,179 @@
     }
     .kpi-value { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
     .kpi-label { font-size: 11px; opacity: 0.9; }
+
+    #appView { display: none; }
+
+    .login-note {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    /* header with logout */
+    .top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .logout-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      box-shadow: 0 6px 16px rgba(234, 88, 12, 0.35);
+    }
   </style>
 </head>
 <body>
 
-  <div class="card" id="topCard">
-    <h2>Automated HR Metric Analyzer</h2>
-    <div class="form-row">
-      <div class="form-group">
-        <label for="fileInput">Upload File</label>
-        <input type="file" id="fileInput" accept=".xlsx,.xls">
+  <!-- LOGIN SCREEN -->
+  <div class="card" id="loginView">
+    <h2>Automated HR Metric Analyzer – Login</h2>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+      <div class="form-group" style="width:260px;">
+        <label for="loginUser">User ID</label>
+        <input type="text" id="loginUser" autocomplete="off" style="width:100%;">
       </div>
-      <div class="form-group">
-        <label for="fromDate">From date</label>
-        <input type="date" id="fromDate">
+      <div class="form-group" style="width:260px;">
+        <label for="loginPass">Password</label>
+        <input type="password" id="loginPass" autocomplete="off" style="width:100%;">
       </div>
-      <div class="form-group">
-        <label for="toDate">To date</label>
-        <input type="date" id="toDate">
-      </div>
-      <div class="form-group" style="margin-top:18px;">
-        <button onclick="processFile()">Generate Summary</button>
-        <button class="clear" onclick="clearData()">Clear</button>
-      </div>
-      <div class="form-group" style="margin-top:22px;">
-        <a id="downloadLink" style="display:none;">Download Summary (Excel)</a>
-      </div>
-      <div class="form-group" style="margin-top:18px;">
-        <button onclick="downloadSample()">Download Sample File</button>
+      <div style="margin-top:8px;display:flex;gap:10px;justify-content:center;">
+        <button onclick="handleLogin()">Login</button>
+        <button onclick="openRequestPage()">Request New Credentials</button>
       </div>
     </div>
-    <div id="log"></div>
+
+    <div id="loginMessage" style="font-size:12px;color:#64748b;margin-top:8px;text-align:center;">
+      Enter your credentials, or click “Request New Credentials” to raise a request.
+    </div>
   </div>
 
-  <div class="card" id="kpiCard" style="display:none;">
-    <h3>Period KPIs (Selected Dates)</h3>
-    <div class="kpi-grid" id="kpiGrid"></div>
-  </div>
-
-  <div class="card">
-    <div class="tab-buttons">
-      <button class="tab-btn active" data-tab="headcount">Headcount Summary</button>
-      <button class="tab-btn" data-tab="type">Employee Type</button>
+  <!-- REQUEST NEW CREDENTIALS PAGE -->
+  <div class="card" id="requestView">
+    <h2>Request New Login Credentials</h2>
+    <div class="login-row">
+      <div class="form-group">
+        <label for="reqEmpId">Employee ID</label>
+        <input type="text" id="reqEmpId" placeholder="Employee ID">
+      </div>
+      <div class="form-group">
+        <label for="reqEmpName">Employee Name</label>
+        <input type="text" id="reqEmpName" placeholder="Employee name">
+      </div>
+      <div class="form-group">
+        <label for="reqDate">Request Date</label>
+        <input type="date" id="reqDate">
+      </div>
     </div>
 
-    <div id="headcount-tab" class="tab-content active">
-      <div class="form-row" style="margin-bottom:8px;">
-        <button style="padding:6px 12px; box-shadow:none;">Headcount Summary</button>
-        <input type="text" id="headcountSummary" style="margin-left:10px;width:140px;" readonly value="0">
+    <div class="login-row">
+      <div class="form-group">
+        <label for="reqDept">Department</label>
+        <input type="text" id="reqDept" placeholder="Department">
       </div>
-      <h3>Summary – Detail View</h3>
-      <div id="tableWrapper">
-        <div id="tableContainer" style="font-size:12px;color:#777;">
-          No data yet. Upload master-dump.xlsx and generate.
+      <div class="form-group">
+        <label for="reqEmail">Email ID</label>
+        <input type="email" id="reqEmail" placeholder="Official email ID">
+      </div>
+      <div class="form-group">
+        <label for="reqUserId">Requested User ID</label>
+        <input type="text" id="reqUserId" placeholder="Preferred login ID">
+      </div>
+    </div>
+
+    <div class="login-row">
+      <div class="form-group" style="flex:1;min-width:300px;">
+        <label for="reqDesc">Description / Justification</label>
+        <textarea id="reqDesc" placeholder="Brief reason for access request"></textarea>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:10px;">
+      <button onclick="submitRequest()">Submit Request</button>
+      <button class="clear" onclick="backToLogin()">Back to Login</button>
+    </div>
+
+    <div id="reqMessage" style="font-size:12px;color:#b91c1c;margin-top:6px;text-align:center;"></div>
+
+    <div class="login-note">
+      On submit, your email application will open with all details pre‑filled in a mail to the project owner.
+    </div>
+  </div>
+
+  <!-- MAIN APP (HIDDEN UNTIL LOGIN) -->
+  <div id="appView">
+    <div class="card" id="topCard">
+      <div class="top-header">
+        <h2 style="margin-bottom:0;">Automated HR Metric Analyzer</h2>
+        <button class="logout-btn" onclick="handleLogout()" title="Logout">
+          <span>⎋</span><span>Logout</span>
+        </button>
+      </div>
+
+      <div class="form-row" style="margin-top:12px;">
+        <div class="form-group">
+          <label for="fileInput">Upload File</label>
+          <input type="file" id="fileInput" accept=".xlsx,.xls">
+        </div>
+        <div class="form-group">
+          <label for="fromDate">From date</label>
+          <input type="date" id="fromDate">
+        </div>
+        <div class="form-group">
+          <label for="toDate">To date</label>
+          <input type="date" id="toDate">
+        </div>
+        <div class="form-group" style="margin-top:18px;">
+          <button onclick="processFile()">Generate Summary</button>
+          <button class="clear" onclick="clearData()">Clear</button>
+        </div>
+        <div class="form-group" style="margin-top:22px;">
+          <a id="downloadLink" style="display:none;">Download Summary (Excel)</a>
+        </div>
+        <div class="form-group" style="margin-top:18px;">
+          <button onclick="downloadSample()">Download Sample File</button>
         </div>
       </div>
+      <div id="log"></div>
     </div>
 
-    <div id="type-tab" class="tab-content">
-      <h3>Employee Type – Closing HC</h3>
-      <div id="typeTableWrapper">
-        <div id="typeTableContainer" style="font-size:12px;color:#777;">
-          No data yet. Upload master-dump.xlsx and generate.
+    <div class="card" id="kpiCard" style="display:none;">
+      <h3>Period KPIs (Selected Dates)</h3>
+      <div class="kpi-grid" id="kpiGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="tab-buttons">
+        <button class="tab-btn active" data-tab="headcount">Headcount Summary</button>
+        <button class="tab-btn" data-tab="type">Employee Type</button>
+      </div>
+
+      <div id="headcount-tab" class="tab-content active">
+        <div class="form-row" style="margin-bottom:8px;justify-content:flex-start;">
+          <button style="padding:6px 12px; box-shadow:none;">Headcount Summary</button>
+          <input type="text" id="headcountSummary" style="margin-left:10px;width:140px;" readonly value="0">
+        </div>
+        <h3>Summary – Detail View</h3>
+        <div id="tableWrapper">
+          <div id="tableContainer" style="font-size:12px;color:#777;">
+            No data yet. Upload master-dump.xlsx and generate.
+          </div>
+        </div>
+      </div>
+
+      <div id="type-tab" class="tab-content">
+        <h3>Employee Type – Closing HC</h3>
+        <div id="typeTableWrapper">
+          <div id="typeTableContainer" style="font-size:12px;color:#777;">
+            No data yet. Upload master-dump.xlsx and generate.
+          </div>
         </div>
       </div>
     </div>
@@ -235,6 +370,97 @@
   <script src="xlsx.full.min.js"></script>
 
   <script>
+    /* ====== LOGIN USERS ====== */
+    const USERS = [
+      { user: "PADMA", pass: "PADMA@TATA" },
+      { user: "SUHAS", pass: "SUHAS@123" }
+    ];
+
+    function handleLogin() {
+      const u = document.getElementById('loginUser').value.trim();
+      const p = document.getElementById('loginPass').value;
+      const msg = document.getElementById('loginMessage');
+
+      if (!u || !p) {
+        msg.textContent = "Please enter both User ID and Password.";
+        return;
+      }
+      const ok = USERS.some(x => x.user === u && x.pass === p);
+      if (ok) {
+        msg.textContent = "";
+        document.getElementById('loginView').style.display = "none";
+        document.getElementById('requestView').style.display = "none";
+        document.getElementById('appView').style.display = "block";
+      } else {
+        msg.textContent = "Invalid User ID or Password. Please try again.";
+      }
+    }
+
+    function handleLogout() {
+      clearData();
+      document.getElementById('appView').style.display = "none";
+      document.getElementById('requestView').style.display = "none";
+      document.getElementById('loginUser').value = "";
+      document.getElementById('loginPass').value = "";
+      document.getElementById('loginMessage').textContent =
+        "Enter your credentials, or click “Request New Credentials” to raise a request.";
+      document.getElementById('loginView').style.display = "block";
+      window.scrollTo(0, 0);
+    }
+
+    function openRequestPage() {
+      document.getElementById('loginView').style.display = "none";
+      document.getElementById('requestView').style.display = "block";
+    }
+
+    function backToLogin() {
+      document.getElementById('requestView').style.display = "none";
+      document.getElementById('loginView').style.display = "block";
+    }
+
+    function submitRequest() {
+      const empId  = document.getElementById('reqEmpId').value.trim();
+      const empName = document.getElementById('reqEmpName').value.trim();
+      const reqDate = document.getElementById('reqDate').value;
+      const dept   = document.getElementById('reqDept').value.trim();
+      const email  = document.getElementById('reqEmail').value.trim();
+      const userId = document.getElementById('reqUserId').value.trim();
+      const desc   = document.getElementById('reqDesc').value.trim();
+      const msg    = document.getElementById('reqMessage');
+
+      if (!empId || !empName || !reqDate || !dept || !email || !userId || !desc) {
+        msg.textContent = "Please fill all fields before submitting.";
+        return;
+      }
+      msg.textContent = "";
+
+      const to = "PADMALOSHINIS101@GMAIL.COM";
+      const subject = encodeURIComponent("New credentials request – Automated HR Metric Analyzer");
+      const bodyLines = [
+        "Dear Padmaloshini S,",
+        "",
+        "Please create login credentials for the Automated HR Metric Analyzer tool.",
+        "",
+        "Request Details:",
+        "Employee ID: " + empId,
+        "Employee Name: " + empName,
+        "Request Date: " + reqDate,
+        "Department: " + dept,
+        "Email ID: " + email,
+        "Requested User ID: " + userId,
+        "",
+        "Description / Justification:",
+        desc,
+        "",
+        "Regards,"
+      ];
+      const body = encodeURIComponent(bodyLines.join("\n"));
+      const mailtoLink = "mailto:" + to + "?subject=" + subject + "&body=" + body;
+      window.location.href = mailtoLink;
+    }
+
+    /* ====== ANALYZER LOGIC ====== */
+
     let globalSummary = null;
     let globalTypeSummary = null;
 
@@ -251,9 +477,7 @@
       });
     });
 
-    function log(msg) {
-      document.getElementById('log').textContent = msg;
-    }
+    function log(msg) { document.getElementById('log').textContent = msg; }
 
     function notify(msg) {
       log(msg);
@@ -263,15 +487,8 @@
       setTimeout(() => { card.style.border = oldBorder; }, 1500);
     }
 
-    function dateOnly(d) {
-      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    }
-
-    function addDays(d, n) {
-      const r = new Date(d);
-      r.setDate(r.getDate() + n);
-      return r;
-    }
+    function dateOnly(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+    function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
 
     function parseDateCell(val) {
       if (val == null || val === "") return null;
@@ -303,7 +520,6 @@
         cont.textContent = "No data for selected period.";
         return;
       }
-
       const table = document.createElement('table');
       const thead = document.createElement('thead');
       const tbody = document.createElement('tbody');
@@ -350,23 +566,15 @@
       }, { joiners:0, attr:0, infant:0, avgAcc:0 });
 
       const days      = summary.length;
-      const openingHC = summary[0]["Opening HC"];                // first day opening
-      const closingHC = summary[summary.length-1]["Closing HC"]; // last day closing
+      const openingHC = summary[0]["Opening HC"];
+      const closingHC = summary[summary.length-1]["Closing HC"];
       const avgHC     = totals.avgAcc / (2 * days);
 
-      // Attrition % for period, capped at 100
       let attrPct = 0;
-      if (avgHC > 0) {
-        attrPct = (totals.attr / avgHC) * 100;
-        if (attrPct > 100) attrPct = 100;
-      }
+      if (avgHC > 0) { attrPct = (totals.attr / avgHC) * 100; }
 
-      // Infant % for period, capped at 100
       let infantPct = 0;
-      if (totals.joiners > 0) {
-        infantPct = (totals.infant / totals.joiners) * 100;
-        if (infantPct > 100) infantPct = 100;
-      }
+      if (totals.joiners > 0) { infantPct = (totals.infant / totals.joiners) * 100; }
 
       const kpis = [
         { label: "Total Days", value: days },
@@ -400,8 +608,10 @@
         "No data yet. Upload master-dump.xlsx and generate.";
       document.getElementById('downloadLink').style.display = "none";
       document.getElementById('kpiCard').style.display = "none";
-      document.getElementById('fileInput').value = "";
-      document.getElementById('headcountSummary').value = 0;
+      const fileInput = document.getElementById('fileInput');
+      if (fileInput) fileInput.value = "";
+      const hc = document.getElementById('headcountSummary');
+      if (hc) hc.value = 0;
       log("Cleared.");
     }
 
@@ -491,7 +701,6 @@
           const summary = [];
           const typeMap = {};
 
-          // opening of first day = active on previous day
           const prevDay = addDays(fromDate, -1);
           let prevClosingHC = rows.filter(r => {
             if (!r.DOJ) return false;
@@ -514,7 +723,6 @@
 
             const openingHC = prevClosingHC;
 
-            // employees active at end of day (for true closing HC & gender split)
             const closingEmployees = rows.filter(r => {
               if (!r.DOJ) return false;
               if (r.DOJ > day) return false;
@@ -539,10 +747,7 @@
 
             const avgHC = (openingHC + closingHC) / 2;
             let attrPct = 0;
-            if (avgHC > 0) {
-              attrPct = (attrHC / avgHC) * 100;
-              if (attrPct > 100) attrPct = 100;   // cap daily %
-            }
+            if (avgHC > 0) { attrPct = (attrHC / avgHC) * 100; }
 
             summary.push({
               "Date": dateStr,
